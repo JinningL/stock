@@ -26,8 +26,16 @@ DEFAULT_SYMBOL_THRESHOLDS = {
 }
 
 
+def get_env_or_default(name, default):
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    value = value.strip()
+    return value if value else default
+
+
 def parse_symbols():
-    raw = os.environ.get("STOCK_SYMBOLS") or ",".join(DEFAULT_SYMBOLS)
+    raw = get_env_or_default("STOCK_SYMBOLS", ",".join(DEFAULT_SYMBOLS))
     symbols = []
     for item in raw.split(","):
         symbol = item.strip().upper()
@@ -40,7 +48,7 @@ def parse_symbols():
 
 def parse_thresholds():
     thresholds = dict(DEFAULT_SYMBOL_THRESHOLDS)
-    raw = os.environ.get("ALERT_THRESHOLDS", "").strip()
+    raw = get_env_or_default("ALERT_THRESHOLDS", "")
     if not raw:
         return thresholds
 
@@ -58,7 +66,8 @@ def parse_thresholds():
 
 
 def get_threshold_for(symbol, thresholds):
-    return float(thresholds.get(symbol, os.environ.get("ALERT_THRESHOLD_PERCENT", DEFAULT_THRESHOLD_PERCENT)))
+    fallback = float(get_env_or_default("ALERT_THRESHOLD_PERCENT", str(DEFAULT_THRESHOLD_PERCENT)))
+    return float(thresholds.get(symbol, fallback))
 
 
 def load_state():
@@ -199,7 +208,7 @@ def should_send_summary(now_market_tz):
     if now_market_tz.weekday() >= 5:
         return False
 
-    summary_hour, summary_minute = [int(part) for part in os.environ.get("SUMMARY_TIME", DEFAULT_SUMMARY_TIME).split(":", 1)]
+    summary_hour, summary_minute = [int(part) for part in get_env_or_default("SUMMARY_TIME", DEFAULT_SUMMARY_TIME).split(":", 1)]
     summary_time = now_market_tz.replace(hour=summary_hour, minute=summary_minute, second=0, microsecond=0)
     return now_market_tz >= summary_time
 
@@ -230,7 +239,7 @@ def maybe_send_intraday_alerts(symbols, thresholds, state, now_market_tz, today_
         print("Outside market hours for intraday alerts")
         return
 
-    lookback_minutes = int(os.environ.get("ALERT_LOOKBACK_MINUTES", DEFAULT_LOOKBACK_MINUTES))
+    lookback_minutes = int(get_env_or_default("ALERT_LOOKBACK_MINUTES", str(DEFAULT_LOOKBACK_MINUTES)))
     for symbol in symbols:
         threshold = get_threshold_for(symbol, thresholds)
         try:
