@@ -1,19 +1,37 @@
 # stock
 
-Simple GitHub Actions job that fetches a stock price from Yahoo Finance and emails it.
+GitHub Actions stock monitor that fetches prices from Yahoo Finance and sends email alerts.
 
 ## Required GitHub Secrets
 
 - `EMAIL`: Gmail address used to send the email
 - `PASSWORD`: Gmail app password for that account
 - `RECEIVER`: Optional recipient email address. If omitted, email is sent to `EMAIL`
-- `STOCK_SYMBOL`: Optional stock ticker such as `AAPL`, `TSLA`, or `NVDA`
+- `STOCK_SYMBOLS`: Optional comma-separated tickers such as `QQQ,TSLA,CRCL`
+
+## Optional GitHub Secrets
+
+- `ALERT_THRESHOLDS`: Per-symbol alert threshold percentages, for example `QQQ:1.5,TSLA:4,CRCL:8`
+- `ALERT_THRESHOLD_PERCENT`: Fallback threshold percentage for symbols not listed in `ALERT_THRESHOLDS`
+- `ALERT_LOOKBACK_MINUTES`: Lookback window for intraday alerts. Default is `60`
+- `SUMMARY_TIME`: Market-local time to send the daily close summary. Default is `16:05`
 
 ## Workflow
 
-- Scheduled for `13:35 UTC` on weekdays
-- On March 30, 2026, that is `9:35 AM` in Toronto / New York time
+- Scheduled every 15 minutes on weekdays during the broad U.S. market session window
+- Sends an intraday alert when a symbol moves sharply within the configured lookback window
+- Sends one daily close summary after the configured summary time
+- Uses a cached `.state/monitor_state.json` file so the same alert is not re-sent every run
 - You can also run it manually from the Actions tab with `workflow_dispatch`
+
+## Default behavior
+
+If you do not set any symbol or threshold secrets, the script defaults to:
+
+- Symbols: `QQQ,TSLA,CRCL`
+- Intraday lookback: `60` minutes
+- Thresholds: `QQQ 1.5%`, `TSLA 4%`, `CRCL 8%`
+- Summary time: `16:05` in `America/New_York`
 
 ## Local Run
 
@@ -21,6 +39,9 @@ Simple GitHub Actions job that fetches a stock price from Yahoo Finance and emai
 export EMAIL="your_email@gmail.com"
 export PASSWORD="your_app_password"
 export RECEIVER="your_email@gmail.com"
-export STOCK_SYMBOL="AAPL"
+export STOCK_SYMBOLS="QQQ,TSLA,CRCL"
+export ALERT_THRESHOLDS="QQQ:1.5,TSLA:4,CRCL:8"
+export ALERT_LOOKBACK_MINUTES="60"
+export SUMMARY_TIME="16:05"
 python main.py
 ```

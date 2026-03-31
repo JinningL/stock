@@ -1,8 +1,8 @@
-name: Daily Stock Email
+name: Stock Monitor
 
 on:
   schedule:
-    - cron: "35 13 * * 1-5"
+    - cron: "*/15 13-22 * * 1-5"
   workflow_dispatch:
 
 jobs:
@@ -18,6 +18,14 @@ jobs:
         with:
           python-version: "3.10"
 
+      - name: Restore monitor state
+        uses: actions/cache/restore@v4
+        with:
+          path: .state
+          key: stock-monitor-${{ github.run_id }}
+          restore-keys: |
+            stock-monitor-
+
       - name: Install dependencies
         run: pip install -r requirements.txt
 
@@ -26,5 +34,18 @@ jobs:
           EMAIL: ${{ secrets.EMAIL }}
           PASSWORD: ${{ secrets.PASSWORD }}
           RECEIVER: ${{ secrets.RECEIVER }}
-          STOCK_SYMBOL: ${{ secrets.STOCK_SYMBOL }}
+          STOCK_SYMBOLS: ${{ secrets.STOCK_SYMBOLS }}
+          ALERT_THRESHOLDS: ${{ secrets.ALERT_THRESHOLDS }}
+          ALERT_THRESHOLD_PERCENT: ${{ secrets.ALERT_THRESHOLD_PERCENT }}
+          ALERT_LOOKBACK_MINUTES: ${{ secrets.ALERT_LOOKBACK_MINUTES }}
+          SUMMARY_TIME: ${{ secrets.SUMMARY_TIME }}
+          MARKET_TIMEZONE: America/New_York
+          STATE_FILE: .state/monitor_state.json
         run: python main.py
+
+      - name: Save monitor state
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .state
+          key: stock-monitor-${{ github.run_id }}
