@@ -4,6 +4,7 @@ import os
 import smtplib
 from datetime import datetime, timedelta
 from email.mime.text import MIMEText
+from html import escape
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -16,9 +17,9 @@ DEFAULT_THRESHOLD_PERCENT = 3.0
 DEFAULT_SUMMARY_TIME = "16:05"
 MARKET_TZ = ZoneInfo(os.environ.get("MARKET_TIMEZONE", "America/New_York"))
 STATE_PATH = Path(os.environ.get("STATE_FILE", ".state/monitor_state.json"))
+HISTORY_PATH = Path(os.environ.get("HISTORY_FILE", "data/daily_history.json"))
+REPORT_PATH = Path(os.environ.get("REPORT_FILE", "docs/index.html"))
 
-# Sensible defaults for the user's current watchlist. These can be overridden
-# with ALERT_THRESHOLDS, for example: QQQ:1.5,TSLA:4,CRCL:8
 DEFAULT_SYMBOL_THRESHOLDS = {
     "QQQ": 1.5,
     "TSLA": 4.0,
@@ -70,46 +71,57 @@ def get_threshold_for(symbol, thresholds):
     return float(thresholds.get(symbol, fallback))
 
 
+def load_json(path, default):
+    if not path.exists():
+        return default
+    with path.open("r", encoding="utf-8") as fh:
+        return json.load(fh)
+
+
+def save_json(path, data):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as fh:
+        json.dump(data, fh, ensure_ascii=True, indent=2, sort_keys=True)
+
+
 def load_state():
-    if not STATE_PATH.exists():
-        return {"alerts_sent": {}, "summaries_sent": {}}
-
-    with STATE_PATH.open("r", encoding="utf-8") as fh:
-        data = json.load(fh)
-
+    data = load_json(STATE_PATH, {"alerts_sent": {}, "summaries_sent": {}})
     data.setdefault("alerts_sent", {})
     data.setdefault("summaries_sent", {})
     return data
 
 
 def save_state(state):
-    STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with STATE_PATH.open("w", encoding="utf-8") as fh:
-        json.dump(state, fh, ensure_ascii=True, indent=2, sort_keys=True)
+    save_json(STATE_PATH, state)
 
 
 def prune_state(state, today_str):
     cutoff = datetime.strptime(today_str, "%Y-%m-%d").date() - timedelta(days=14)
 
-    alerts = {
+    state["alerts_sent"] = {
         key: value
         for key, value in state.get("alerts_sent", {}).items()
         if datetime.strptime(value, "%Y-%m-%d").date() >= cutoff
     }
-    summaries = {
+    state["summaries_sent"] = {
         key: value
         for key, value in state.get("summaries_sent", {}).items()
         if datetime.strptime(key, "%Y-%m-%d").date() >= cutoff
     }
-
-    state["alerts_sent"] = alerts
-    state["summaries_sent"] = summaries
 
 
 def safe_pct_change(current, baseline):
     if baseline == 0:
         return 0.0
     return ((current - baseline) / baseline) * 100
+
+
+def format_signed(value):
+    return f"{value:+.2f}"
+
+
+def format_pct(value):
+    return f"{value:+.2f}%"
 
 
 def get_daily_snapshot(symbol):
@@ -218,8 +230,8 @@ def build_alert_lines(symbol, intraday, threshold, lookback_minutes):
     return [
         f"{symbol} moved sharply {direction} in the last {lookback_minutes} minutes",
         f"Latest price: {intraday['latest_price']}",
-        f"{lookback_minutes}-minute move: {intraday['move']:+.2f} ({intraday['move_pct']:+.2f}%)",
-        f"Day change vs previous close: {intraday['daily_change']:+.2f} ({intraday['daily_change_pct']:+.2f}%)",
+        f"{lookback_minutes}-minute move: {format_signed(intraday['move'])} ({format_pct(intraday['move_pct'])})",
+        f"Day change vs previous close: {format_signed(intraday['daily_change'])} ({format_pct(intraday['daily_change_pct'])})",
         f"Alert threshold: {threshold:.2f}%",
         f"Data time: {intraday['latest_time']}",
     ]
@@ -229,9 +241,405 @@ def build_summary_lines(today_str, daily_snapshots):
     lines = [f"{today_str} Daily Close Summary", ""]
     for snapshot in daily_snapshots:
         lines.append(
-            f"{snapshot['symbol']}: Close {snapshot['last_close']:.2f} | Day change {snapshot['change']:+.2f} ({snapshot['change_pct']:+.2f}%)"
+            f"{snapshot['symbol']}: Close {snapshot['last_close']:.2f} | Day change {format_signed(snapshot['change'])} ({format_pct(snapshot['change_pct'])})"
         )
     return lines
+
+
+def load_history():
+    history = load_json(HISTORY_PATH, {"records": []})
+    history.setdefault("records", [])
+    return history
+
+
+def save_history(history):
+    save_json(HISTORY_PATH, history)
+
+
+def upsert_history_records(history, snapshots):
+    changed = False
+    record_map = {(item["date"], item["symbol"]): item for item in history["records"]}
+    for snapshot in snapshots:
+        key = (snapshot["latest_date"], snapshot["symbol"])
+        record = {
+            "date": snapshot["latest_date"],
+            "symbol": snapshot["symbol"],
+            "close": snapshot["last_close"],
+            "previous_close": snapshot["previous_close"],
+            "change": snapshot["change"],
+            "change_pct": snapshot["change_pct"],
+        }
+        if record_map.get(key) != record:
+            record_map[key] = record
+            changed = True
+
+    history["records"] = sorted(record_map.values(), key=lambda item: (item["date"], item["symbol"]))
+    return changed
+
+
+def build_sparkline(points, width=220, height=72):
+    if not points:
+        return ""
+    if len(points) == 1:
+        value = points[0]
+        points = [value, value]
+
+    min_value = min(points)
+    max_value = max(points)
+    spread = max(max_value - min_value, 0.01)
+    step_x = width / (len(points) - 1)
+
+    coords = []
+    for index, value in enumerate(points):
+        x = index * step_x
+        y = height - ((value - min_value) / spread) * height
+        coords.append(f"{x:.1f},{y:.1f}")
+    return " ".join(coords)
+
+
+def build_symbol_sections(symbols, history):
+    sections = []
+    records = history["records"]
+    for symbol in symbols:
+        rows = [item for item in records if item["symbol"] == symbol]
+        if not rows:
+            sections.append(
+                {
+                    "symbol": symbol,
+                    "last_close": "--",
+                    "change": "--",
+                    "change_pct": "--",
+                    "last_date": "No close data yet",
+                    "sparkline": "",
+                    "table_rows": '<tr><td colspan="4">No historical rows yet.</td></tr>',
+                }
+            )
+            continue
+
+        latest = rows[-1]
+        sparkline = build_sparkline([row["close"] for row in rows[-20:]])
+        table_rows = []
+        for row in reversed(rows[-8:]):
+            tone = "up" if row["change"] > 0 else "down" if row["change"] < 0 else "flat"
+            table_rows.append(
+                "<tr>"
+                f"<td>{escape(row['date'])}</td>"
+                f"<td>{row['close']:.2f}</td>"
+                f"<td class=\"{tone}\">{format_signed(row['change'])}</td>"
+                f"<td class=\"{tone}\">{format_pct(row['change_pct'])}</td>"
+                "</tr>"
+            )
+
+        sections.append(
+            {
+                "symbol": symbol,
+                "last_close": f"{latest['close']:.2f}",
+                "change": format_signed(latest["change"]),
+                "change_pct": format_pct(latest["change_pct"]),
+                "last_date": latest["date"],
+                "sparkline": sparkline,
+                "tone": "up" if latest["change"] > 0 else "down" if latest["change"] < 0 else "flat",
+                "table_rows": "".join(table_rows),
+            }
+        )
+
+    return sections
+
+
+def render_report(symbols, history, generated_at):
+    sections = build_symbol_sections(symbols, history)
+    last_updated = generated_at.strftime("%Y-%m-%d %H:%M %Z")
+    cards = []
+    tables = []
+
+    for section in sections:
+        sparkline_block = (
+            f'<svg viewBox="0 0 220 72" class="sparkline" preserveAspectRatio="none"><polyline points="{section["sparkline"]}" /></svg>'
+            if section.get("sparkline")
+            else '<div class="empty-chart">Waiting for close data</div>'
+        )
+        tone = section.get("tone", "flat")
+        cards.append(
+            f"""
+            <article class="card">
+              <div class="card-top">
+                <div>
+                  <p class="eyebrow">Watchlist</p>
+                  <h2>{escape(section['symbol'])}</h2>
+                </div>
+                <p class="stamp">{escape(section['last_date'])}</p>
+              </div>
+              <div class="price-row">
+                <div>
+                  <p class="metric-label">Last close</p>
+                  <p class="price">{section['last_close']}</p>
+                </div>
+                <div class="delta-block {tone}">
+                  <p class="metric-label">Day move</p>
+                  <p class="delta">{section['change']}</p>
+                  <p class="delta-pct">{section['change_pct']}</p>
+                </div>
+              </div>
+              {sparkline_block}
+            </article>
+            """
+        )
+
+        tables.append(
+            f"""
+            <section class="table-card">
+              <div class="table-head">
+                <div>
+                  <p class="eyebrow">Recent closes</p>
+                  <h3>{escape(section['symbol'])}</h3>
+                </div>
+                <p class="stamp">{escape(section['last_date'])}</p>
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Close</th>
+                    <th>Change</th>
+                    <th>Change %</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {section['table_rows']}
+                </tbody>
+              </table>
+            </section>
+            """
+        )
+
+    return f"""<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Stock Monitor Report</title>
+    <style>
+      :root {{
+        --bg: #f6f1e8;
+        --panel: rgba(255, 252, 247, 0.85);
+        --ink: #18242f;
+        --muted: #6a737d;
+        --line: rgba(24, 36, 47, 0.12);
+        --up: #0f7b53;
+        --down: #b54833;
+        --flat: #61707d;
+        --accent: #d7e7d3;
+        --shadow: 0 18px 48px rgba(24, 36, 47, 0.12);
+      }}
+      * {{ box-sizing: border-box; }}
+      body {{
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top left, rgba(215, 231, 211, 0.9), transparent 38%),
+          radial-gradient(circle at top right, rgba(228, 209, 182, 0.65), transparent 34%),
+          linear-gradient(180deg, #fbf7f0 0%, var(--bg) 100%);
+      }}
+      .shell {{
+        width: min(1120px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 48px 0 72px;
+      }}
+      .hero {{
+        display: grid;
+        gap: 16px;
+        margin-bottom: 28px;
+      }}
+      .eyebrow {{
+        margin: 0 0 8px;
+        font-size: 12px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }}
+      h1, h2, h3, p {{ margin: 0; }}
+      h1 {{
+        font-size: clamp(2.3rem, 5vw, 4.8rem);
+        line-height: 0.95;
+        letter-spacing: -0.04em;
+        max-width: 10ch;
+      }}
+      .subtitle {{
+        max-width: 52rem;
+        color: var(--muted);
+        font-size: 1.04rem;
+        line-height: 1.6;
+      }}
+      .status-bar {{
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 10px;
+      }}
+      .pill {{
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.6);
+        padding: 10px 14px;
+        font-size: 0.92rem;
+      }}
+      .grid {{
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 16px;
+        margin: 28px 0 20px;
+      }}
+      .card, .table-card {{
+        background: var(--panel);
+        border: 1px solid rgba(255, 255, 255, 0.8);
+        border-radius: 24px;
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(12px);
+      }}
+      .card {{
+        padding: 22px;
+      }}
+      .card-top, .table-head {{
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: start;
+      }}
+      .stamp {{
+        color: var(--muted);
+        font-size: 0.9rem;
+      }}
+      .price-row {{
+        display: flex;
+        justify-content: space-between;
+        gap: 14px;
+        align-items: end;
+        margin: 18px 0 14px;
+      }}
+      .metric-label {{
+        color: var(--muted);
+        font-size: 0.88rem;
+        margin-bottom: 6px;
+      }}
+      .price {{
+        font-size: 2.4rem;
+        letter-spacing: -0.05em;
+      }}
+      .delta-block {{
+        text-align: right;
+      }}
+      .delta {{
+        font-size: 1.45rem;
+        font-weight: 700;
+      }}
+      .delta-pct {{
+        margin-top: 2px;
+        color: inherit;
+      }}
+      .up {{ color: var(--up); }}
+      .down {{ color: var(--down); }}
+      .flat {{ color: var(--flat); }}
+      .sparkline {{
+        width: 100%;
+        height: 72px;
+        margin-top: 10px;
+      }}
+      .sparkline polyline {{
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 3;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }}
+      .empty-chart {{
+        height: 72px;
+        margin-top: 10px;
+        border-radius: 16px;
+        border: 1px dashed var(--line);
+        display: grid;
+        place-items: center;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }}
+      .table-stack {{
+        display: grid;
+        gap: 16px;
+        margin-top: 12px;
+      }}
+      .table-card {{
+        padding: 20px;
+      }}
+      table {{
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 14px;
+        font-family: "Avenir Next", "Segoe UI", sans-serif;
+      }}
+      th, td {{
+        padding: 12px 0;
+        text-align: left;
+        border-bottom: 1px solid var(--line);
+        font-size: 0.95rem;
+      }}
+      th {{
+        color: var(--muted);
+        font-weight: 600;
+      }}
+      tbody tr:last-child td {{
+        border-bottom: none;
+      }}
+      .footer {{
+        margin-top: 28px;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }}
+      @media (max-width: 640px) {{
+        .shell {{
+          width: min(100% - 20px, 1120px);
+          padding-top: 28px;
+        }}
+        .price-row, .card-top, .table-head {{
+          display: block;
+        }}
+        .delta-block {{
+          text-align: left;
+          margin-top: 12px;
+        }}
+      }}
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <p class="eyebrow">GitHub Stock Monitor</p>
+        <h1>Daily close report for your watchlist.</h1>
+        <p class="subtitle">This page is regenerated by GitHub Actions. It stores close history for QQQ, TSLA, and CRCL and gives you a quick dashboard plus the most recent close rows for each symbol.</p>
+        <div class="status-bar">
+          <div class="pill">Symbols: {escape(", ".join(symbols))}</div>
+          <div class="pill">Records: {len(history['records'])}</div>
+          <div class="pill">Generated: {escape(last_updated)}</div>
+        </div>
+      </section>
+
+      <section class="grid">
+        {''.join(cards)}
+      </section>
+
+      <section class="table-stack">
+        {''.join(tables)}
+      </section>
+
+      <p class="footer">The report updates after scheduled workflow runs. Intraday alerts are still emailed separately; this page focuses on close data history.</p>
+    </main>
+  </body>
+</html>
+"""
+
+
+def write_report(symbols, history, generated_at):
+    REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    REPORT_PATH.write_text(render_report(symbols, history, generated_at), encoding="utf-8")
 
 
 def maybe_send_intraday_alerts(symbols, thresholds, state, now_market_tz, today_str):
@@ -268,11 +676,11 @@ def maybe_send_intraday_alerts(symbols, thresholds, state, now_market_tz, today_
 def maybe_send_daily_summary(symbols, state, now_market_tz, today_str):
     if not should_send_summary(now_market_tz):
         print("Too early for daily summary")
-        return
+        return []
 
     if state["summaries_sent"].get(today_str):
         print(f"[INFO] summary already sent for {today_str}")
-        return
+        return []
 
     snapshots = []
     for symbol in symbols:
@@ -290,13 +698,31 @@ def maybe_send_daily_summary(symbols, state, now_market_tz, today_str):
 
     if not snapshots:
         print("[INFO] no daily summary rows available yet")
-        return
+        return []
 
     subject = f"Daily Stock Summary - {today_str}"
     body = "\n".join(build_summary_lines(today_str, snapshots))
     send_email(subject, body)
     state["summaries_sent"][today_str] = True
     print(f"[SUMMARY] sent daily summary for {today_str}")
+    return snapshots
+
+
+def refresh_history_for_report(symbols, history, now_market_tz):
+    updated_snapshots = []
+    for symbol in symbols:
+        try:
+            snapshot = get_daily_snapshot(symbol)
+        except Exception as exc:
+            print(f"[WARN] report refresh failed for {symbol}: {exc}")
+            continue
+
+        if snapshot["latest_date"] > now_market_tz.date().isoformat():
+            continue
+        updated_snapshots.append(snapshot)
+
+    if updated_snapshots:
+        upsert_history_records(history, updated_snapshots)
 
 
 def main():
@@ -305,12 +731,21 @@ def main():
     symbols = parse_symbols()
     thresholds = parse_thresholds()
     state = load_state()
+    history = load_history()
     prune_state(state, today_str)
 
     print(f"Running stock monitor at {now_market_tz.isoformat()} for {', '.join(symbols)}")
     maybe_send_intraday_alerts(symbols, thresholds, state, now_market_tz, today_str)
-    maybe_send_daily_summary(symbols, state, now_market_tz, today_str)
+    summary_snapshots = maybe_send_daily_summary(symbols, state, now_market_tz, today_str)
+    if summary_snapshots:
+        upsert_history_records(history, summary_snapshots)
+    else:
+        refresh_history_for_report(symbols, history, now_market_tz)
+
     save_state(state)
+    save_history(history)
+    write_report(symbols, history, now_market_tz)
+    print(f"[REPORT] wrote {REPORT_PATH}")
 
 
 if __name__ == "__main__":

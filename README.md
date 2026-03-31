@@ -2,6 +2,8 @@
 
 GitHub Actions stock monitor that fetches prices from Yahoo Finance and sends email alerts.
 
+It also generates a simple static report page at `docs/index.html` using saved daily close history from `data/daily_history.json`.
+
 ## Required GitHub Secrets
 
 - `EMAIL`: Gmail address used to send the email
@@ -22,7 +24,16 @@ GitHub Actions stock monitor that fetches prices from Yahoo Finance and sends em
 - Sends an intraday alert when a symbol moves sharply within the configured lookback window
 - Sends one daily close summary after the configured summary time
 - Uses a cached `.state/monitor_state.json` file so the same alert is not re-sent every run
+- Stores close-history rows in `data/daily_history.json`
+- Generates a simple report page in `docs/index.html`
+- Commits report updates back to the repository automatically
 - You can also run it manually from the Actions tab with `workflow_dispatch`
+
+## Report Page
+
+- The static report is written to `docs/index.html`
+- If you enable GitHub Pages for the `docs/` folder on `main`, you can open it as a webpage
+- The page shows the latest close, day change, and recent close history for each tracked symbol
 
 ## Default behavior
 

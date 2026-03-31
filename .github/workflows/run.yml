@@ -5,6 +5,9 @@ on:
     - cron: "*/15 13-22 * * 1-5"
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   run-script:
     runs-on: ubuntu-latest
@@ -21,7 +24,7 @@ jobs:
           python-version: "3.10"
 
       - name: Prepare state directory
-        run: mkdir -p .state
+        run: mkdir -p .state data docs
 
       - name: Restore monitor state
         uses: actions/cache/restore@v4
@@ -46,7 +49,21 @@ jobs:
           SUMMARY_TIME: ${{ secrets.SUMMARY_TIME }}
           MARKET_TIMEZONE: America/New_York
           STATE_FILE: .state/monitor_state.json
+          HISTORY_FILE: data/daily_history.json
+          REPORT_FILE: docs/index.html
         run: python main.py
+
+      - name: Commit generated report
+        run: |
+          if git diff --quiet -- docs/index.html data/daily_history.json; then
+            echo "No report changes to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/index.html data/daily_history.json
+          git commit -m "Update stock report"
+          git push
 
       - name: Save monitor state
         if: always()
