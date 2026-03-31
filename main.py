@@ -214,22 +214,22 @@ def should_send_summary(now_market_tz):
 
 
 def build_alert_lines(symbol, intraday, threshold, lookback_minutes):
-    direction = "上涨" if intraday["move_pct"] > 0 else "下跌"
+    direction = "up" if intraday["move_pct"] > 0 else "down"
     return [
-        f"{symbol} 在最近 {lookback_minutes} 分钟{direction}较多",
-        f"最新价格: {intraday['latest_price']}",
-        f"{lookback_minutes} 分钟变化: {intraday['move']:+.2f} ({intraday['move_pct']:+.2f}%)",
-        f"今日相对昨收: {intraday['daily_change']:+.2f} ({intraday['daily_change_pct']:+.2f}%)",
-        f"提醒阈值: {threshold:.2f}%",
-        f"数据时间: {intraday['latest_time']}",
+        f"{symbol} moved sharply {direction} in the last {lookback_minutes} minutes",
+        f"Latest price: {intraday['latest_price']}",
+        f"{lookback_minutes}-minute move: {intraday['move']:+.2f} ({intraday['move_pct']:+.2f}%)",
+        f"Day change vs previous close: {intraday['daily_change']:+.2f} ({intraday['daily_change_pct']:+.2f}%)",
+        f"Alert threshold: {threshold:.2f}%",
+        f"Data time: {intraday['latest_time']}",
     ]
 
 
 def build_summary_lines(today_str, daily_snapshots):
-    lines = [f"{today_str} 收盘总结", ""]
+    lines = [f"{today_str} Daily Close Summary", ""]
     for snapshot in daily_snapshots:
         lines.append(
-            f"{snapshot['symbol']}: 收盘 {snapshot['last_close']:.2f} | 日变动 {snapshot['change']:+.2f} ({snapshot['change_pct']:+.2f}%)"
+            f"{snapshot['symbol']}: Close {snapshot['last_close']:.2f} | Day change {snapshot['change']:+.2f} ({snapshot['change_pct']:+.2f}%)"
         )
     return lines
 
