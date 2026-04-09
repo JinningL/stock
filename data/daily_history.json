@@ -167,6 +167,30 @@
       "date": "2026-04-08",
       "previous_close": 346.65,
       "symbol": "TSLA"
+    },
+    {
+      "change": -5.1,
+      "change_pct": -5.4,
+      "close": 89.34,
+      "date": "2026-04-09",
+      "previous_close": 94.44,
+      "symbol": "CRCL"
+    },
+    {
+      "change": -1.0,
+      "change_pct": -0.16,
+      "close": 605.09,
+      "date": "2026-04-09",
+      "previous_close": 606.09,
+      "symbol": "QQQ"
+    },
+    {
+      "change": -0.91,
+      "change_pct": -0.27,
+      "close": 342.34,
+      "date": "2026-04-09",
+      "previous_close": 343.25,
+      "symbol": "TSLA"
     }
   ]
 }
