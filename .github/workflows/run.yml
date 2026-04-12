@@ -37,6 +37,9 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Run tests
+        run: python -m unittest discover -s tests -p "test_*.py"
+
       - name: Run script
         env:
           EMAIL: ${{ secrets.EMAIL }}
@@ -48,6 +51,7 @@ jobs:
           ALERT_LOOKBACK_MINUTES: ${{ secrets.ALERT_LOOKBACK_MINUTES }}
           SUMMARY_TIME: ${{ secrets.SUMMARY_TIME }}
           MARKET_TIMEZONE: America/New_York
+          CONFIG_FILE: data/monitor_config.json
           STATE_FILE: .state/monitor_state.json
           HISTORY_FILE: data/daily_history.json
           REPORT_FILE: docs/index.html

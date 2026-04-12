@@ -1,58 +1,86 @@
 # stock
 
-GitHub Actions stock monitor that fetches prices from Yahoo Finance and sends email alerts.
+GitHub Actions stock monitor that fetches prices from Yahoo Finance, sends email alerts, stores close history, and renders a report page in `docs/index.html`.
 
-It also generates a simple static report page at `docs/index.html` using saved daily close history from `data/daily_history.json`.
+The project now supports a local dashboard for editing the watchlist and alert thresholds in the browser. Those settings are saved in `data/monitor_config.json`.
 
 ## Required GitHub Secrets
 
 - `EMAIL`: Gmail address used to send the email
 - `PASSWORD`: Gmail app password for that account
 - `RECEIVER`: Optional recipient email address. If omitted, email is sent to `EMAIL`
-- `STOCK_SYMBOLS`: Optional comma-separated tickers such as `QQQ,TSLA,CRCL`
 
 ## Optional GitHub Secrets
 
-- `ALERT_THRESHOLDS`: Per-symbol alert threshold percentages, for example `QQQ:1.5,TSLA:4,CRCL:8`
-- `ALERT_THRESHOLD_PERCENT`: Fallback threshold percentage for symbols not listed in `ALERT_THRESHOLDS`
-- `ALERT_LOOKBACK_MINUTES`: Lookback window for intraday alerts. Default is `60`
-- `SUMMARY_TIME`: Market-local time to send the daily close summary. Default is `16:05`
+These still work as runtime overrides and take precedence over `data/monitor_config.json`:
 
-## Workflow
+- `STOCK_SYMBOLS`: Comma-separated tickers such as `QQQ,TSLA,AAPL`
+- `ALERT_THRESHOLDS`: Per-symbol thresholds such as `QQQ:1.5,TSLA:4,AAPL:2.2`
+- `ALERT_THRESHOLD_PERCENT`: Fallback threshold for symbols not listed in `ALERT_THRESHOLDS`
+- `ALERT_LOOKBACK_MINUTES`: Lookback window for intraday alerts
+- `SUMMARY_TIME`: Market-local time for the daily summary, for example `16:05`
 
-- Scheduled every 15 minutes on weekdays during the broad U.S. market session window
-- Sends an intraday alert when a symbol moves sharply within the configured lookback window
-- Sends one daily close summary after the configured summary time
-- Uses a cached `.state/monitor_state.json` file so the same alert is not re-sent every run
-- Stores close-history rows in `data/daily_history.json`
-- Generates a simple report page in `docs/index.html`
-- Commits report updates back to the repository automatically
-- You can also run it manually from the Actions tab with `workflow_dispatch`
+## Config File
 
-## Report Page
+The main configuration lives in `data/monitor_config.json`.
 
-- The static report is written to `docs/index.html`
-- If you enable GitHub Pages for the `docs/` folder on `main`, you can open it as a webpage
-- The page shows the latest close, day change, and recent close history for each tracked symbol
+```json
+{
+  "lookback_minutes": 60,
+  "summary_time": "16:05",
+  "symbols": [
+    { "symbol": "QQQ", "threshold": 1.5 },
+    { "symbol": "TSLA", "threshold": 4.0 }
+  ]
+}
+```
 
-## Default behavior
+Each symbol has its own alert threshold. If the absolute move over the lookback window exceeds that threshold, the script sends an email alert.
 
-If you do not set any symbol or threshold secrets, the script defaults to:
+## Local Usage
 
-- Symbols: `QQQ,TSLA,CRCL`
-- Intraday lookback: `60` minutes
-- Thresholds: `QQQ 1.5%`, `TSLA 4%`, `CRCL 8%`
-- Summary time: `16:05` in `America/New_York`
+Install dependencies:
 
-## Local Run
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Run the monitor:
 
 ```bash
 export EMAIL="your_email@gmail.com"
 export PASSWORD="your_app_password"
 export RECEIVER="your_email@gmail.com"
-export STOCK_SYMBOLS="QQQ,TSLA,CRCL"
-export ALERT_THRESHOLDS="QQQ:1.5,TSLA:4,CRCL:8"
-export ALERT_LOOKBACK_MINUTES="60"
-export SUMMARY_TIME="16:05"
 python main.py
 ```
+
+Render the report without fetching fresh market data:
+
+```bash
+python main.py render
+```
+
+Start the local dashboard for editing symbols and thresholds in the browser:
+
+```bash
+python main.py serve
+```
+
+Then open `http://127.0.0.1:8000`.
+
+## Workflow
+
+- Scheduled every 15 minutes on weekdays during the U.S. market session window
+- Sends one intraday alert per symbol and direction per day
+- Sends one daily close summary after the configured summary time
+- Stores close history in `data/daily_history.json`
+- Writes the report page to `docs/index.html`
+- Commits generated report updates back to the repository
+
+## Report Page
+
+- `docs/index.html` shows the watchlist, alert thresholds, recent close history, and a browser-based settings form
+- On GitHub Pages the form is preview-only because the site is static
+- In local `serve` mode the form saves directly to `data/monitor_config.json`

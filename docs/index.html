@@ -1,13 +1,13 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Stock Monitor Report</title>
+    <title>股票提醒面板</title>
     <style>
       :root {
         --bg: #f6f1e8;
-        --panel: rgba(255, 252, 247, 0.85);
+        --panel: rgba(255, 252, 247, 0.88);
         --ink: #18242f;
         --muted: #6a737d;
         --line: rgba(24, 36, 47, 0.12);
@@ -15,12 +15,14 @@
         --down: #b54833;
         --flat: #61707d;
         --accent: #d7e7d3;
+        --warm: #f1e1c8;
+        --info: #e8f0fb;
         --shadow: 0 18px 48px rgba(24, 36, 47, 0.12);
       }
       * { box-sizing: border-box; }
       body {
         margin: 0;
-        font-family: Georgia, "Times New Roman", serif;
+        font-family: "Avenir Next", "Segoe UI", sans-serif;
         color: var(--ink);
         background:
           radial-gradient(circle at top left, rgba(215, 231, 211, 0.9), transparent 38%),
@@ -28,14 +30,15 @@
           linear-gradient(180deg, #fbf7f0 0%, var(--bg) 100%);
       }
       .shell {
-        width: min(1120px, calc(100% - 32px));
+        width: min(1160px, calc(100% - 32px));
         margin: 0 auto;
-        padding: 48px 0 72px;
+        padding: 42px 0 72px;
       }
+      h1, h2, h3, p { margin: 0; }
       .hero {
         display: grid;
         gap: 16px;
-        margin-bottom: 28px;
+        margin-bottom: 24px;
       }
       .eyebrow {
         margin: 0 0 8px;
@@ -44,44 +47,152 @@
         text-transform: uppercase;
         color: var(--muted);
       }
-      h1, h2, h3, p { margin: 0; }
       h1 {
-        font-size: clamp(2.3rem, 5vw, 4.8rem);
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: clamp(2.4rem, 5vw, 4.8rem);
         line-height: 0.95;
-        letter-spacing: -0.04em;
+        letter-spacing: -0.05em;
         max-width: 10ch;
       }
       .subtitle {
-        max-width: 52rem;
+        max-width: 58rem;
         color: var(--muted);
         font-size: 1.04rem;
-        line-height: 1.6;
+        line-height: 1.65;
       }
       .status-bar {
         display: flex;
         flex-wrap: wrap;
         gap: 12px;
-        margin-top: 10px;
       }
-      .pill {
+      .pill, .mini-pill {
         border: 1px solid var(--line);
         border-radius: 999px;
-        background: rgba(255, 255, 255, 0.6);
+        background: rgba(255, 255, 255, 0.68);
         padding: 10px 14px;
         font-size: 0.92rem;
+      }
+      .mini-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: flex-end;
+      }
+      .mini-pill {
+        padding: 8px 10px;
+        font-size: 0.82rem;
+      }
+      .config-panel, .card, .table-card {
+        background: var(--panel);
+        border: 1px solid rgba(255, 255, 255, 0.84);
+        border-radius: 24px;
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(12px);
+      }
+      .config-panel {
+        padding: 24px;
+        margin: 24px 0 28px;
+      }
+      .config-head {
+        display: grid;
+        gap: 10px;
+      }
+      .section-title {
+        font-size: 1.7rem;
+        letter-spacing: -0.03em;
+      }
+      .notice {
+        border-radius: 16px;
+        padding: 14px 16px;
+        font-size: 0.95rem;
+        line-height: 1.55;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.62);
+      }
+      .notice.live { background: var(--accent); }
+      .notice.warn { background: #f8ead7; }
+      .notice.error { background: #f7dbd6; }
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 14px;
+        margin: 18px 0 16px;
+      }
+      label {
+        display: grid;
+        gap: 8px;
+        font-size: 0.93rem;
+        color: var(--muted);
+      }
+      input, button {
+        font: inherit;
+      }
+      input {
+        width: 100%;
+        padding: 12px 14px;
+        border-radius: 14px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.85);
+        color: var(--ink);
+      }
+      input:focus {
+        outline: 2px solid rgba(24, 36, 47, 0.15);
+        outline-offset: 0;
+      }
+      .symbol-list {
+        display: grid;
+        gap: 12px;
+      }
+      .symbol-row {
+        display: grid;
+        grid-template-columns: minmax(140px, 1.2fr) minmax(140px, 1fr) auto;
+        gap: 10px;
+        align-items: end;
+        padding: 14px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.62);
+        border: 1px solid var(--line);
+      }
+      .symbol-row-title {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--muted);
+      }
+      .button-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 16px;
+      }
+      button {
+        border: none;
+        border-radius: 999px;
+        padding: 11px 16px;
+        cursor: pointer;
+        background: var(--ink);
+        color: white;
+      }
+      button.secondary {
+        background: rgba(24, 36, 47, 0.08);
+        color: var(--ink);
+      }
+      button.ghost {
+        background: transparent;
+        border: 1px solid var(--line);
+        color: var(--muted);
+      }
+      .tips {
+        margin-top: 14px;
+        color: var(--muted);
+        font-size: 0.92rem;
+        line-height: 1.6;
       }
       .grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
         gap: 16px;
         margin: 28px 0 20px;
-      }
-      .card, .table-card {
-        background: var(--panel);
-        border: 1px solid rgba(255, 255, 255, 0.8);
-        border-radius: 24px;
-        box-shadow: var(--shadow);
-        backdrop-filter: blur(12px);
       }
       .card {
         padding: 22px;
@@ -91,10 +202,6 @@
         justify-content: space-between;
         gap: 12px;
         align-items: start;
-      }
-      .stamp {
-        color: var(--muted);
-        font-size: 0.9rem;
       }
       .price-row {
         display: flex;
@@ -109,11 +216,13 @@
         margin-bottom: 6px;
       }
       .price {
+        font-family: Georgia, "Times New Roman", serif;
         font-size: 2.4rem;
         letter-spacing: -0.05em;
       }
       .delta-block {
         text-align: right;
+        color: inherit;
       }
       .delta {
         font-size: 1.45rem;
@@ -121,11 +230,10 @@
       }
       .delta-pct {
         margin-top: 2px;
-        color: inherit;
       }
-      .up { color: var(--up); }
-      .down { color: var(--down); }
-      .flat { color: var(--flat); }
+      .card.up, .up { color: var(--up); }
+      .card.down, .down { color: var(--down); }
+      .card.flat, .flat { color: var(--flat); }
       .sparkline {
         width: 100%;
         height: 72px;
@@ -160,7 +268,6 @@
         width: 100%;
         border-collapse: collapse;
         margin-top: 14px;
-        font-family: "Avenir Next", "Segoe UI", sans-serif;
       }
       th, td {
         padding: 12px 0;
@@ -179,10 +286,15 @@
         margin-top: 28px;
         color: var(--muted);
         font-size: 0.92rem;
+        line-height: 1.7;
       }
-      @media (max-width: 640px) {
+      code {
+        font-family: "SFMono-Regular", "Menlo", monospace;
+        font-size: 0.9em;
+      }
+      @media (max-width: 760px) {
         .shell {
-          width: min(100% - 20px, 1120px);
+          width: min(100% - 20px, 1160px);
           padding-top: 28px;
         }
         .price-row, .card-top, .table-head {
@@ -192,39 +304,79 @@
           text-align: left;
           margin-top: 12px;
         }
+        .symbol-row {
+          grid-template-columns: 1fr;
+        }
       }
     </style>
   </head>
   <body>
     <main class="shell">
       <section class="hero">
-        <p class="eyebrow">GitHub Stock Monitor</p>
-        <h1>Daily close report for your watchlist.</h1>
-        <p class="subtitle">This page is regenerated by GitHub Actions. It stores close history for QQQ, TSLA, and CRCL and gives you a quick dashboard plus the most recent close rows for each symbol.</p>
+        <p class="eyebrow">Stock Monitor</p>
+        <h1>选股票、调阈值，再看每天收盘表现。</h1>
+        <p class="subtitle">这个页面现在不仅展示收盘历史，也能作为你的提醒配置面板。用 <code>python main.py serve</code> 打开时，你可以直接在网页里修改股票列表、每只股票的提醒阈值、盘中回看分钟数和每日摘要时间。</p>
         <div class="status-bar">
-          <div class="pill">Symbols: QQQ, TSLA, CRCL</div>
-          <div class="pill">Records: 27</div>
-          <div class="pill">Generated: 2026-04-10 19:04 EDT</div>
+          <div class="pill">股票: QQQ, TSLA, CRCL, GOOGL</div>
+          <div class="pill">盘中回看: 60 分钟</div>
+          <div class="pill">摘要时间: 16:05</div>
+          <div class="pill">历史记录: 27</div>
+          <div class="pill">生成时间: 2026-04-11 21:09 EDT</div>
         </div>
+      </section>
+
+      <section class="config-panel">
+        <div class="config-head">
+          <p class="eyebrow">Alert Settings</p>
+          <h2 class="section-title">在网页里配置监控股票和提醒幅度</h2>
+          <p class="subtitle">提醒规则很直接：系统会比较最近一段时间内的价格波动，只要绝对涨跌幅超过你设置的阈值，就发送邮件。每个方向每天只发一次，避免刷屏。</p>
+          <div id="config-status" class="notice">正在加载当前设置...</div>
+        </div>
+
+        <form id="config-form">
+          <div class="form-grid">
+            <label>
+              <span>盘中回看分钟数</span>
+              <input id="lookback-minutes" name="lookback_minutes" type="number" min="1" step="1" required>
+            </label>
+            <label>
+              <span>每日摘要时间</span>
+              <input id="summary-time" name="summary_time" type="time" required>
+            </label>
+          </div>
+
+          <div id="symbol-list" class="symbol-list"></div>
+          <datalist id="popular-symbols"><option value="AAPL"></option><option value="AMZN"></option><option value="BRK-B"></option><option value="CRCL"></option><option value="GOOGL"></option><option value="META"></option><option value="MSFT"></option><option value="NVDA"></option><option value="QQQ"></option><option value="SPY"></option><option value="TSLA"></option></datalist>
+
+          <div class="button-row">
+            <button type="button" id="add-symbol">新增股票</button>
+            <button type="submit" id="save-config">保存设置</button>
+            <button type="button" id="reset-config" class="secondary">恢复已保存</button>
+          </div>
+          <p class="tips">股票代码示例：<code>QQQ</code>、<code>TSLA</code>、<code>AAPL</code>、<code>BRK-B</code>。阈值填百分比数字，例如 <code>2.5</code> 表示波动超过 2.5% 就提醒。</p>
+        </form>
       </section>
 
       <section class="grid">
         
-            <article class="card">
+            <article class="card up">
               <div class="card-top">
                 <div>
                   <p class="eyebrow">Watchlist</p>
-                  <h2>QQQ</h2>
+                  <h3>QQQ</h3>
                 </div>
-                <p class="stamp">2026-04-10</p>
+                <div class="mini-pills">
+                  <span class="mini-pill">阈值 1.50%</span>
+                  <span class="mini-pill">2026-04-10</span>
+                </div>
               </div>
               <div class="price-row">
                 <div>
-                  <p class="metric-label">Last close</p>
+                  <p class="metric-label">最近收盘</p>
                   <p class="price">611.07</p>
                 </div>
-                <div class="delta-block up">
-                  <p class="metric-label">Day move</p>
+                <div class="delta-block">
+                  <p class="metric-label">当日涨跌</p>
                   <p class="delta">+0.88</p>
                   <p class="delta-pct">+0.14%</p>
                 </div>
@@ -232,21 +384,24 @@
               <svg viewBox="0 0 220 72" class="sparkline" preserveAspectRatio="none"><polyline points="0.0,72.0 27.5,46.2 55.0,36.5 82.5,35.6 110.0,30.8 137.5,30.7 165.0,6.8 192.5,1.2 220.0,0.0" /></svg>
             </article>
             
-            <article class="card">
+            <article class="card up">
               <div class="card-top">
                 <div>
                   <p class="eyebrow">Watchlist</p>
-                  <h2>TSLA</h2>
+                  <h3>TSLA</h3>
                 </div>
-                <p class="stamp">2026-04-10</p>
+                <div class="mini-pills">
+                  <span class="mini-pill">阈值 4.00%</span>
+                  <span class="mini-pill">2026-04-10</span>
+                </div>
               </div>
               <div class="price-row">
                 <div>
-                  <p class="metric-label">Last close</p>
+                  <p class="metric-label">最近收盘</p>
                   <p class="price">348.95</p>
                 </div>
-                <div class="delta-block up">
-                  <p class="metric-label">Day move</p>
+                <div class="delta-block">
+                  <p class="metric-label">当日涨跌</p>
                   <p class="delta">+3.33</p>
                   <p class="delta-pct">+0.96%</p>
                 </div>
@@ -254,26 +409,54 @@
               <svg viewBox="0 0 220 72" class="sparkline" preserveAspectRatio="none"><polyline points="0.0,49.2 27.5,18.0 55.0,0.0 82.5,39.2 110.0,53.9 137.5,65.6 165.0,72.0 192.5,67.5 220.0,61.2" /></svg>
             </article>
             
-            <article class="card">
+            <article class="card up">
               <div class="card-top">
                 <div>
                   <p class="eyebrow">Watchlist</p>
-                  <h2>CRCL</h2>
+                  <h3>CRCL</h3>
                 </div>
-                <p class="stamp">2026-04-10</p>
+                <div class="mini-pills">
+                  <span class="mini-pill">阈值 8.00%</span>
+                  <span class="mini-pill">2026-04-10</span>
+                </div>
               </div>
               <div class="price-row">
                 <div>
-                  <p class="metric-label">Last close</p>
+                  <p class="metric-label">最近收盘</p>
                   <p class="price">88.04</p>
                 </div>
-                <div class="delta-block up">
-                  <p class="metric-label">Day move</p>
+                <div class="delta-block">
+                  <p class="metric-label">当日涨跌</p>
                   <p class="delta">+2.94</p>
                   <p class="delta-pct">+3.45%</p>
                 </div>
               </div>
               <svg viewBox="0 0 220 72" class="sparkline" preserveAspectRatio="none"><polyline points="0.0,38.4 27.5,0.0 55.0,32.6 82.5,36.0 110.0,22.8 137.5,9.0 165.0,6.8 192.5,72.0 220.0,51.5" /></svg>
+            </article>
+            
+            <article class="card flat">
+              <div class="card-top">
+                <div>
+                  <p class="eyebrow">Watchlist</p>
+                  <h3>GOOGL</h3>
+                </div>
+                <div class="mini-pills">
+                  <span class="mini-pill">阈值 2.00%</span>
+                  <span class="mini-pill">还没有收盘数据</span>
+                </div>
+              </div>
+              <div class="price-row">
+                <div>
+                  <p class="metric-label">最近收盘</p>
+                  <p class="price">--</p>
+                </div>
+                <div class="delta-block">
+                  <p class="metric-label">当日涨跌</p>
+                  <p class="delta">--</p>
+                  <p class="delta-pct">--</p>
+                </div>
+              </div>
+              <div class="empty-chart">等待下一次收盘数据</div>
             </article>
             
       </section>
@@ -286,15 +469,18 @@
                   <p class="eyebrow">Recent closes</p>
                   <h3>QQQ</h3>
                 </div>
-                <p class="stamp">2026-04-10</p>
+                <div class="mini-pills">
+                  <span class="mini-pill">阈值 1.50%</span>
+                  <span class="mini-pill">2026-04-10</span>
+                </div>
               </div>
               <table>
                 <thead>
                   <tr>
-                    <th>Date</th>
-                    <th>Close</th>
-                    <th>Change</th>
-                    <th>Change %</th>
+                    <th>日期</th>
+                    <th>收盘</th>
+                    <th>涨跌</th>
+                    <th>涨跌幅</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -309,15 +495,18 @@
                   <p class="eyebrow">Recent closes</p>
                   <h3>TSLA</h3>
                 </div>
-                <p class="stamp">2026-04-10</p>
+                <div class="mini-pills">
+                  <span class="mini-pill">阈值 4.00%</span>
+                  <span class="mini-pill">2026-04-10</span>
+                </div>
               </div>
               <table>
                 <thead>
                   <tr>
-                    <th>Date</th>
-                    <th>Close</th>
-                    <th>Change</th>
-                    <th>Change %</th>
+                    <th>日期</th>
+                    <th>收盘</th>
+                    <th>涨跌</th>
+                    <th>涨跌幅</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -332,15 +521,18 @@
                   <p class="eyebrow">Recent closes</p>
                   <h3>CRCL</h3>
                 </div>
-                <p class="stamp">2026-04-10</p>
+                <div class="mini-pills">
+                  <span class="mini-pill">阈值 8.00%</span>
+                  <span class="mini-pill">2026-04-10</span>
+                </div>
               </div>
               <table>
                 <thead>
                   <tr>
-                    <th>Date</th>
-                    <th>Close</th>
-                    <th>Change</th>
-                    <th>Change %</th>
+                    <th>日期</th>
+                    <th>收盘</th>
+                    <th>涨跌</th>
+                    <th>涨跌幅</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -349,9 +541,200 @@
               </table>
             </section>
             
+            <section class="table-card">
+              <div class="table-head">
+                <div>
+                  <p class="eyebrow">Recent closes</p>
+                  <h3>GOOGL</h3>
+                </div>
+                <div class="mini-pills">
+                  <span class="mini-pill">阈值 2.00%</span>
+                  <span class="mini-pill">还没有收盘数据</span>
+                </div>
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>日期</th>
+                    <th>收盘</th>
+                    <th>涨跌</th>
+                    <th>涨跌幅</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td colspan="4">还没有历史记录。</td></tr>
+                </tbody>
+              </table>
+            </section>
+            
       </section>
 
-      <p class="footer">The report updates after scheduled workflow runs. Intraday alerts are still emailed separately; this page focuses on close data history.</p>
+      <p class="footer">静态报告页会展示当前配置和收盘历史；真正保存配置需要本地运行 <code>python main.py serve</code>。定时监控脚本仍然使用 <code>python main.py</code>，并会优先读取 <code>data/monitor_config.json</code>，同时兼容原有环境变量覆盖。</p>
     </main>
+
+    <script>
+      const INITIAL_CONFIG = {"lookback_minutes": 60, "summary_time": "16:05", "symbols": [{"symbol": "QQQ", "threshold": 1.5}, {"symbol": "TSLA", "threshold": 4.0}, {"symbol": "CRCL", "threshold": 8.0}, {"symbol": "GOOGL", "threshold": 2.0}]};
+
+      function cloneConfig(config) {
+        return JSON.parse(JSON.stringify(config));
+      }
+
+      function setStatus(message, tone) {
+        const status = document.getElementById("config-status");
+        status.textContent = message;
+        status.className = "notice" + (tone ? " " + tone : "");
+      }
+
+      function makeRow(entry) {
+        const row = document.createElement("div");
+        row.className = "symbol-row";
+        row.innerHTML = `
+          <label>
+            <span class="symbol-row-title">股票代码</span>
+            <input class="symbol-input" list="popular-symbols" maxlength="15" placeholder="例如 AAPL" value="${entry.symbol || ""}" required>
+          </label>
+          <label>
+            <span class="symbol-row-title">提醒阈值 (%)</span>
+            <input class="threshold-input" type="number" min="0.1" step="0.1" placeholder="例如 2.5" value="${entry.threshold || ""}" required>
+          </label>
+          <button type="button" class="ghost remove-symbol">删除</button>
+        `;
+        row.querySelector(".remove-symbol").addEventListener("click", () => {
+          row.remove();
+        });
+        return row;
+      }
+
+      function renderSymbolRows(config) {
+        const list = document.getElementById("symbol-list");
+        list.innerHTML = "";
+        config.symbols.forEach((entry) => list.appendChild(makeRow(entry)));
+      }
+
+      function populateForm(config) {
+        document.getElementById("lookback-minutes").value = config.lookback_minutes;
+        document.getElementById("summary-time").value = config.summary_time;
+        renderSymbolRows(config);
+      }
+
+      function readForm() {
+        const rows = Array.from(document.querySelectorAll(".symbol-row"));
+        const symbols = rows
+          .map((row) => {
+            const symbol = row.querySelector(".symbol-input").value.trim().toUpperCase();
+            const threshold = Number(row.querySelector(".threshold-input").value);
+            return { symbol, threshold };
+          })
+          .filter((item) => item.symbol);
+
+        if (!symbols.length) {
+          throw new Error("至少保留一只股票。");
+        }
+
+        const seen = new Set();
+        for (const item of symbols) {
+          if (!/^[A-Z0-9^][A-Z0-9.\-^]{0,14}$/.test(item.symbol)) {
+            throw new Error("股票代码格式不对，请只使用字母、数字、点或横线。");
+          }
+          if (seen.has(item.symbol)) {
+            throw new Error("股票代码不能重复。");
+          }
+          if (!Number.isFinite(item.threshold) || item.threshold <= 0) {
+            throw new Error(`请给 ${item.symbol} 填一个大于 0 的阈值。`);
+          }
+          seen.add(item.symbol);
+        }
+
+        return {
+          lookback_minutes: Number(document.getElementById("lookback-minutes").value),
+          summary_time: document.getElementById("summary-time").value,
+          symbols,
+        };
+      }
+
+      async function tryLoadServerConfig() {
+        const response = await fetch("/api/config", { headers: { "Accept": "application/json" } });
+        if (!response.ok) {
+          throw new Error("config fetch failed");
+        }
+        const payload = await response.json();
+        return payload.config;
+      }
+
+      let savedConfig = cloneConfig(INITIAL_CONFIG);
+      let liveMode = false;
+
+      document.getElementById("add-symbol").addEventListener("click", () => {
+        document.getElementById("symbol-list").appendChild(makeRow({ symbol: "", threshold: 2.0 }));
+      });
+
+      document.getElementById("reset-config").addEventListener("click", () => {
+        populateForm(savedConfig);
+        setStatus(
+          liveMode
+            ? "已恢复到当前保存的服务器配置。"
+            : "已恢复到页面里最后一次加载的配置。",
+          liveMode ? "live" : ""
+        );
+      });
+
+      document.getElementById("config-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        let nextConfig;
+        try {
+          nextConfig = readForm();
+        } catch (error) {
+          setStatus(error.message, "error");
+          return;
+        }
+
+        localStorage.setItem("stock-monitor-draft-config", JSON.stringify(nextConfig));
+
+        try {
+          const response = await fetch("/api/config", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(nextConfig),
+          });
+          if (!response.ok) {
+            throw new Error("save failed");
+          }
+          const payload = await response.json();
+          savedConfig = payload.config;
+          liveMode = true;
+          localStorage.removeItem("stock-monitor-draft-config");
+          populateForm(savedConfig);
+          setStatus("设置已保存到 data/monitor_config.json。刷新页面后，新的股票和阈值会用于后续提醒。", "live");
+          window.setTimeout(() => window.location.reload(), 700);
+        } catch (error) {
+          setStatus("当前页面是静态模式，设置只保存在这个浏览器里做预览。要真正保存，请运行 python main.py serve。", "warn");
+        }
+      });
+
+      (async () => {
+        const draft = localStorage.getItem("stock-monitor-draft-config");
+        if (draft) {
+          try {
+            savedConfig = JSON.parse(draft);
+          } catch (error) {
+            localStorage.removeItem("stock-monitor-draft-config");
+          }
+        }
+
+        try {
+          savedConfig = await tryLoadServerConfig();
+          liveMode = true;
+          setStatus("当前为本地可写模式。保存后会直接写入 data/monitor_config.json。", "live");
+        } catch (error) {
+          if (draft) {
+            setStatus("当前是静态报告页。你上次在浏览器里改过的设置已经恢复，但还没有真正保存到项目里。", "warn");
+          } else {
+            setStatus("当前是静态报告页。你可以先在这里预览设置；要真正保存，请在项目目录运行 python main.py serve。", "warn");
+          }
+        }
+
+        populateForm(savedConfig);
+      })();
+    </script>
   </body>
 </html>

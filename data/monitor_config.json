@@ -1,0 +1,22 @@
+{
+  "lookback_minutes": 60,
+  "summary_time": "16:05",
+  "symbols": [
+    {
+      "symbol": "QQQ",
+      "threshold": 1.5
+    },
+    {
+      "symbol": "TSLA",
+      "threshold": 4.0
+    },
+    {
+      "symbol": "CRCL",
+      "threshold": 8.0
+    },
+    {
+      "symbol": "GOOGL",
+      "threshold": 2.0
+    }
+  ]
+}
