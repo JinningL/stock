@@ -96,8 +96,8 @@ class RenderingTests(unittest.TestCase):
 
         html = main.render_report(config, history, datetime(2026, 4, 10, 16, 5, tzinfo=main.MARKET_TZ))
 
-        self.assertIn("在网页里配置监控股票和提醒幅度", html)
-        self.assertIn("阈值 1.20%", html)
+        self.assertIn("Configure tracked symbols and alert thresholds in the browser", html)
+        self.assertIn("Threshold 1.20%", html)
         self.assertIn("python main.py serve", html)
         self.assertIn("AAPL", html)
 
@@ -115,11 +115,11 @@ class RenderingTests(unittest.TestCase):
         text_body = main.build_alert_email_text("TSLA", intraday, 3.5, 60)
         html_body = main.build_alert_email_html("TSLA", intraday, 3.5, 60)
 
-        self.assertIn("股票提醒已触发", text_body)
+        self.assertIn("Stock alert triggered", text_body)
         self.assertIn("TSLA", text_body)
         self.assertIn("3.50%", text_body)
         self.assertIn("TSLA", html_body)
-        self.assertIn("你的提醒阈值", html_body)
+        self.assertIn("Your alert threshold", html_body)
         self.assertIn("2026-04-10 14:30 EDT", html_body)
 
 

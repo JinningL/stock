@@ -397,65 +397,65 @@ def get_intraday_snapshot(symbol, now_market_tz, lookback_minutes):
 
 
 def build_alert_email_text(symbol, intraday, threshold, lookback_minutes):
-    direction = "上涨" if intraday["move_pct"] > 0 else "下跌"
+    direction = "Up" if intraday["move_pct"] > 0 else "Down"
     return "\n".join(
         [
-            "股票提醒已触发",
+            "Stock alert triggered",
             "",
-            f"股票: {symbol}",
-            f"方向: {direction}",
-            f"当前价格: {intraday['latest_price']:.2f}",
-            f"{lookback_minutes} 分钟前基准价: {intraday['baseline_price']:.2f}",
-            f"{lookback_minutes} 分钟涨跌: {format_signed(intraday['move'])} ({format_pct(intraday['move_pct'])})",
-            f"今日相对昨收: {format_signed(intraday['daily_change'])} ({format_pct(intraday['daily_change_pct'])})",
-            f"你的提醒阈值: {threshold:.2f}%",
-            f"触发时间: {intraday['latest_time']}",
+            f"Symbol: {symbol}",
+            f"Direction: {direction}",
+            f"Current price: {intraday['latest_price']:.2f}",
+            f"Baseline price {lookback_minutes} minutes ago: {intraday['baseline_price']:.2f}",
+            f"{lookback_minutes}-minute move: {format_signed(intraday['move'])} ({format_pct(intraday['move_pct'])})",
+            f"Change vs previous close: {format_signed(intraday['daily_change'])} ({format_pct(intraday['daily_change_pct'])})",
+            f"Your alert threshold: {threshold:.2f}%",
+            f"Triggered at: {intraday['latest_time']}",
             "",
-            f"触发原因: {symbol} 在最近 {lookback_minutes} 分钟内的波动已经超过你设置的 {threshold:.2f}% 阈值。",
+            f"Reason: {symbol} moved more than your {threshold:.2f}% threshold over the last {lookback_minutes} minutes.",
         ]
     )
 
 
 def build_alert_email_html(symbol, intraday, threshold, lookback_minutes):
     tone_color = "#0f7b53" if intraday["move_pct"] > 0 else "#b54833"
-    direction = "上涨" if intraday["move_pct"] > 0 else "下跌"
+    direction = "up" if intraday["move_pct"] > 0 else "down"
     return f"""<!doctype html>
-<html lang="zh-CN">
+<html lang="en">
   <body style="margin:0;padding:24px;background:#f7f3eb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1b2733;">
     <div style="max-width:640px;margin:0 auto;background:#fffdf9;border:1px solid #eadfce;border-radius:20px;padding:24px;">
       <p style="margin:0 0 8px;font-size:12px;letter-spacing:0.16em;text-transform:uppercase;color:#7a6d5c;">Stock Alert</p>
-      <h1 style="margin:0 0 8px;font-size:30px;line-height:1.05;">{escape(symbol)} 触发提醒</h1>
-      <p style="margin:0 0 20px;color:#5f6b75;font-size:15px;">最近 {lookback_minutes} 分钟 {direction}幅度已经超过你设置的阈值。</p>
+      <h1 style="margin:0 0 8px;font-size:30px;line-height:1.05;">{escape(symbol)} Alert Triggered</h1>
+      <p style="margin:0 0 20px;color:#5f6b75;font-size:15px;">The {direction} move over the last {lookback_minutes} minutes is above your configured threshold.</p>
 
       <div style="border-radius:18px;background:#f6efe2;padding:18px;margin-bottom:18px;">
-        <p style="margin:0;color:#5f6b75;font-size:13px;">核心结论</p>
+        <p style="margin:0;color:#5f6b75;font-size:13px;">Summary</p>
         <p style="margin:8px 0 0;font-size:28px;font-weight:700;color:{tone_color};">{format_pct(intraday['move_pct'])}</p>
-        <p style="margin:6px 0 0;font-size:14px;color:#42505d;">当前价格 {intraday['latest_price']:.2f}，阈值 {threshold:.2f}%</p>
+        <p style="margin:6px 0 0;font-size:14px;color:#42505d;">Current price {intraday['latest_price']:.2f}, threshold {threshold:.2f}%</p>
       </div>
 
       <table style="width:100%;border-collapse:collapse;font-size:14px;">
         <tr>
-          <td style="padding:10px 0;border-bottom:1px solid #eadfce;color:#5f6b75;">当前价格</td>
+          <td style="padding:10px 0;border-bottom:1px solid #eadfce;color:#5f6b75;">Current price</td>
           <td style="padding:10px 0;border-bottom:1px solid #eadfce;text-align:right;">{intraday['latest_price']:.2f}</td>
         </tr>
         <tr>
-          <td style="padding:10px 0;border-bottom:1px solid #eadfce;color:#5f6b75;">基准价格</td>
+          <td style="padding:10px 0;border-bottom:1px solid #eadfce;color:#5f6b75;">Baseline price</td>
           <td style="padding:10px 0;border-bottom:1px solid #eadfce;text-align:right;">{intraday['baseline_price']:.2f}</td>
         </tr>
         <tr>
-          <td style="padding:10px 0;border-bottom:1px solid #eadfce;color:#5f6b75;">{lookback_minutes} 分钟涨跌</td>
+          <td style="padding:10px 0;border-bottom:1px solid #eadfce;color:#5f6b75;">{lookback_minutes}-minute move</td>
           <td style="padding:10px 0;border-bottom:1px solid #eadfce;text-align:right;color:{tone_color};">{format_signed(intraday['move'])} ({format_pct(intraday['move_pct'])})</td>
         </tr>
         <tr>
-          <td style="padding:10px 0;border-bottom:1px solid #eadfce;color:#5f6b75;">今日相对昨收</td>
+          <td style="padding:10px 0;border-bottom:1px solid #eadfce;color:#5f6b75;">Change vs previous close</td>
           <td style="padding:10px 0;border-bottom:1px solid #eadfce;text-align:right;">{format_signed(intraday['daily_change'])} ({format_pct(intraday['daily_change_pct'])})</td>
         </tr>
         <tr>
-          <td style="padding:10px 0;border-bottom:1px solid #eadfce;color:#5f6b75;">你的提醒阈值</td>
+          <td style="padding:10px 0;border-bottom:1px solid #eadfce;color:#5f6b75;">Your alert threshold</td>
           <td style="padding:10px 0;border-bottom:1px solid #eadfce;text-align:right;">{threshold:.2f}%</td>
         </tr>
         <tr>
-          <td style="padding:10px 0;color:#5f6b75;">触发时间</td>
+          <td style="padding:10px 0;color:#5f6b75;">Triggered at</td>
           <td style="padding:10px 0;text-align:right;">{escape(intraday['latest_time'])}</td>
         </tr>
       </table>
@@ -467,16 +467,16 @@ def build_alert_email_html(symbol, intraday, threshold, lookback_minutes):
 
 def build_summary_email_text(today_str, snapshots, threshold_map, config):
     lines = [
-        f"每日股票收盘摘要 | {today_str}",
+        f"Daily Stock Close Summary | {today_str}",
         "",
-        f"盘中提醒规则: 最近 {config['lookback_minutes']} 分钟波动超过阈值就发邮件",
-        f"每日摘要时间: {config['summary_time']}",
+        f"Intraday alert rule: send an email when the move over the last {config['lookback_minutes']} minutes exceeds the threshold",
+        f"Daily summary time: {config['summary_time']}",
         "",
     ]
     for snapshot in snapshots:
         threshold = threshold_map.get(snapshot["symbol"], DEFAULT_THRESHOLD_PERCENT)
         lines.append(
-            f"{snapshot['symbol']}: 收盘 {snapshot['last_close']:.2f} | 日涨跌 {format_signed(snapshot['change'])} ({format_pct(snapshot['change_pct'])}) | 盘中阈值 {threshold:.2f}%"
+            f"{snapshot['symbol']}: Close {snapshot['last_close']:.2f} | Day change {format_signed(snapshot['change'])} ({format_pct(snapshot['change_pct'])}) | Intraday threshold {threshold:.2f}%"
         )
     return "\n".join(lines)
 
@@ -496,26 +496,26 @@ def build_summary_email_html(today_str, snapshots, threshold_map, config):
             "</tr>"
         )
     return f"""<!doctype html>
-<html lang="zh-CN">
+<html lang="en">
   <body style="margin:0;padding:24px;background:#f7f3eb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1b2733;">
     <div style="max-width:720px;margin:0 auto;background:#fffdf9;border:1px solid #eadfce;border-radius:20px;padding:24px;">
       <p style="margin:0 0 8px;font-size:12px;letter-spacing:0.16em;text-transform:uppercase;color:#7a6d5c;">Daily Summary</p>
-      <h1 style="margin:0 0 8px;font-size:30px;line-height:1.05;">每日股票收盘摘要</h1>
-      <p style="margin:0 0 18px;color:#5f6b75;font-size:15px;">日期 {today_str}。盘中提醒规则：最近 {config['lookback_minutes']} 分钟波动超过阈值就发邮件。</p>
+      <h1 style="margin:0 0 8px;font-size:30px;line-height:1.05;">Daily Stock Close Summary</h1>
+      <p style="margin:0 0 18px;color:#5f6b75;font-size:15px;">Date {today_str}. Intraday alert rule: send an email when the move over the last {config['lookback_minutes']} minutes exceeds the threshold.</p>
 
       <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;">
-        <span style="padding:10px 14px;border:1px solid #eadfce;border-radius:999px;background:#faf5ec;font-size:14px;">股票数 {len(snapshots)}</span>
-        <span style="padding:10px 14px;border:1px solid #eadfce;border-radius:999px;background:#faf5ec;font-size:14px;">摘要时间 {escape(config['summary_time'])}</span>
+        <span style="padding:10px 14px;border:1px solid #eadfce;border-radius:999px;background:#faf5ec;font-size:14px;">Symbols {len(snapshots)}</span>
+        <span style="padding:10px 14px;border:1px solid #eadfce;border-radius:999px;background:#faf5ec;font-size:14px;">Summary time {escape(config['summary_time'])}</span>
       </div>
 
       <table style="width:100%;border-collapse:collapse;font-size:14px;">
         <thead>
           <tr>
-            <th style="padding:0 0 10px;text-align:left;color:#5f6b75;font-weight:600;">股票</th>
-            <th style="padding:0 0 10px;text-align:right;color:#5f6b75;font-weight:600;">收盘</th>
-            <th style="padding:0 0 10px;text-align:right;color:#5f6b75;font-weight:600;">涨跌</th>
-            <th style="padding:0 0 10px;text-align:right;color:#5f6b75;font-weight:600;">涨跌幅</th>
-            <th style="padding:0 0 10px;text-align:right;color:#5f6b75;font-weight:600;">盘中阈值</th>
+            <th style="padding:0 0 10px;text-align:left;color:#5f6b75;font-weight:600;">Symbol</th>
+            <th style="padding:0 0 10px;text-align:right;color:#5f6b75;font-weight:600;">Close</th>
+            <th style="padding:0 0 10px;text-align:right;color:#5f6b75;font-weight:600;">Change</th>
+            <th style="padding:0 0 10px;text-align:right;color:#5f6b75;font-weight:600;">Change %</th>
+            <th style="padding:0 0 10px;text-align:right;color:#5f6b75;font-weight:600;">Intraday threshold</th>
           </tr>
         </thead>
         <tbody>
@@ -623,10 +623,10 @@ def build_symbol_sections(config, history):
                     "last_close": "--",
                     "change": "--",
                     "change_pct": "--",
-                    "last_date": "还没有收盘数据",
+                    "last_date": "No close data yet",
                     "sparkline": "",
                     "tone": "flat",
-                    "table_rows": '<tr><td colspan="4">还没有历史记录。</td></tr>',
+                    "table_rows": '<tr><td colspan="4">No history yet.</td></tr>',
                 }
             )
             continue
@@ -675,7 +675,7 @@ def render_report(config, history, generated_at):
         sparkline_block = (
             f'<svg viewBox="0 0 220 72" class="sparkline" preserveAspectRatio="none"><polyline points="{section["sparkline"]}" /></svg>'
             if section.get("sparkline")
-            else '<div class="empty-chart">等待下一次收盘数据</div>'
+            else '<div class="empty-chart">Waiting for the next close</div>'
         )
         cards.append(
             f"""
@@ -686,17 +686,17 @@ def render_report(config, history, generated_at):
                   <h3>{escape(section['symbol'])}</h3>
                 </div>
                 <div class="mini-pills">
-                  <span class="mini-pill">阈值 {escape(section['threshold'])}</span>
+                  <span class="mini-pill">Threshold {escape(section['threshold'])}</span>
                   <span class="mini-pill">{escape(section['last_date'])}</span>
                 </div>
               </div>
               <div class="price-row">
                 <div>
-                  <p class="metric-label">最近收盘</p>
+                  <p class="metric-label">Latest close</p>
                   <p class="price">{section['last_close']}</p>
                 </div>
                 <div class="delta-block">
-                  <p class="metric-label">当日涨跌</p>
+                  <p class="metric-label">Day change</p>
                   <p class="delta">{section['change']}</p>
                   <p class="delta-pct">{section['change_pct']}</p>
                 </div>
@@ -714,17 +714,17 @@ def render_report(config, history, generated_at):
                   <h3>{escape(section['symbol'])}</h3>
                 </div>
                 <div class="mini-pills">
-                  <span class="mini-pill">阈值 {escape(section['threshold'])}</span>
+                  <span class="mini-pill">Threshold {escape(section['threshold'])}</span>
                   <span class="mini-pill">{escape(section['last_date'])}</span>
                 </div>
               </div>
               <table>
                 <thead>
                   <tr>
-                    <th>日期</th>
-                    <th>收盘</th>
-                    <th>涨跌</th>
-                    <th>涨跌幅</th>
+                    <th>Date</th>
+                    <th>Close</th>
+                    <th>Change</th>
+                    <th>Change %</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -736,11 +736,11 @@ def render_report(config, history, generated_at):
         )
 
     return f"""<!doctype html>
-<html lang="zh-CN">
+<html lang="en">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>股票提醒面板</title>
+    <title>Stock Alert Dashboard</title>
     <style>
       :root {{
         --bg: #f6f1e8;
@@ -1051,33 +1051,33 @@ def render_report(config, history, generated_at):
     <main class="shell">
       <section class="hero">
         <p class="eyebrow">Stock Monitor</p>
-        <h1>选股票、调阈值，再看每天收盘表现。</h1>
-        <p class="subtitle">这个页面现在不仅展示收盘历史，也能作为你的提醒配置面板。用 <code>python main.py serve</code> 打开时，你可以直接在网页里修改股票列表、每只股票的提醒阈值、盘中回看分钟数和每日摘要时间。</p>
+        <h1>Pick symbols, tune thresholds, and review each day's close.</h1>
+        <p class="subtitle">This page now shows close history and doubles as your alert settings dashboard. When opened with <code>python main.py serve</code>, you can edit the watchlist, per-symbol alert thresholds, intraday lookback minutes, and the daily summary time directly in the browser.</p>
         <div class="status-bar">
-          <div class="pill">股票: {escape(", ".join(symbols))}</div>
-          <div class="pill">盘中回看: {config['lookback_minutes']} 分钟</div>
-          <div class="pill">摘要时间: {escape(config['summary_time'])}</div>
-          <div class="pill">历史记录: {len(history['records'])}</div>
-          <div class="pill">生成时间: {escape(last_updated)}</div>
+          <div class="pill">Symbols: {escape(", ".join(symbols))}</div>
+          <div class="pill">Intraday lookback: {config['lookback_minutes']} min</div>
+          <div class="pill">Summary time: {escape(config['summary_time'])}</div>
+          <div class="pill">History rows: {len(history['records'])}</div>
+          <div class="pill">Generated at: {escape(last_updated)}</div>
         </div>
       </section>
 
       <section class="config-panel">
         <div class="config-head">
           <p class="eyebrow">Alert Settings</p>
-          <h2 class="section-title">在网页里配置监控股票和提醒幅度</h2>
-          <p class="subtitle">提醒规则很直接：系统会比较最近一段时间内的价格波动，只要绝对涨跌幅超过你设置的阈值，就发送邮件。每个方向每天只发一次，避免刷屏。</p>
-          <div id="config-status" class="notice">正在加载当前设置...</div>
+          <h2 class="section-title">Configure tracked symbols and alert thresholds in the browser</h2>
+          <p class="subtitle">The rule is simple: the monitor compares the recent price move with your threshold, and sends an email when the absolute percentage move exceeds it. Each symbol and direction only triggers once per day to avoid spam.</p>
+          <div id="config-status" class="notice">Loading current settings...</div>
         </div>
 
         <form id="config-form">
           <div class="form-grid">
             <label>
-              <span>盘中回看分钟数</span>
+              <span>Intraday lookback minutes</span>
               <input id="lookback-minutes" name="lookback_minutes" type="number" min="1" step="1" required>
             </label>
             <label>
-              <span>每日摘要时间</span>
+              <span>Daily summary time</span>
               <input id="summary-time" name="summary_time" type="time" required>
             </label>
           </div>
@@ -1086,11 +1086,11 @@ def render_report(config, history, generated_at):
           <datalist id="popular-symbols">{datalist_options}</datalist>
 
           <div class="button-row">
-            <button type="button" id="add-symbol">新增股票</button>
-            <button type="submit" id="save-config">保存设置</button>
-            <button type="button" id="reset-config" class="secondary">恢复已保存</button>
+            <button type="button" id="add-symbol">Add symbol</button>
+            <button type="submit" id="save-config">Save settings</button>
+            <button type="button" id="reset-config" class="secondary">Reset to saved</button>
           </div>
-          <p class="tips">股票代码示例：<code>QQQ</code>、<code>TSLA</code>、<code>AAPL</code>、<code>BRK-B</code>。阈值填百分比数字，例如 <code>2.5</code> 表示波动超过 2.5% 就提醒。</p>
+          <p class="tips">Ticker examples: <code>QQQ</code>, <code>TSLA</code>, <code>AAPL</code>, <code>BRK-B</code>. Thresholds are percentages, so <code>2.5</code> means an alert triggers when the move exceeds 2.5%.</p>
         </form>
       </section>
 
@@ -1102,7 +1102,7 @@ def render_report(config, history, generated_at):
         {''.join(tables)}
       </section>
 
-      <p class="footer">静态报告页会展示当前配置和收盘历史；真正保存配置需要本地运行 <code>python main.py serve</code>。定时监控脚本仍然使用 <code>python main.py</code>，并会优先读取 <code>{escape(str(CONFIG_PATH))}</code>，同时兼容原有环境变量覆盖。</p>
+      <p class="footer">The static report shows the current configuration and close history. To actually save changes, run <code>python main.py serve</code> locally. The scheduled monitor still runs with <code>python main.py</code>, reads <code>{escape(str(CONFIG_PATH))}</code> first, and still supports environment variable overrides.</p>
     </main>
 
     <script>
@@ -1123,14 +1123,14 @@ def render_report(config, history, generated_at):
         row.className = "symbol-row";
         row.innerHTML = `
           <label>
-            <span class="symbol-row-title">股票代码</span>
-            <input class="symbol-input" list="popular-symbols" maxlength="15" placeholder="例如 AAPL" value="${{entry.symbol || ""}}" required>
+            <span class="symbol-row-title">Ticker</span>
+            <input class="symbol-input" list="popular-symbols" maxlength="15" placeholder="e.g. AAPL" value="${{entry.symbol || ""}}" required>
           </label>
           <label>
-            <span class="symbol-row-title">提醒阈值 (%)</span>
-            <input class="threshold-input" type="number" min="0.1" step="0.1" placeholder="例如 2.5" value="${{entry.threshold || ""}}" required>
+            <span class="symbol-row-title">Alert threshold (%)</span>
+            <input class="threshold-input" type="number" min="0.1" step="0.1" placeholder="e.g. 2.5" value="${{entry.threshold || ""}}" required>
           </label>
-          <button type="button" class="ghost remove-symbol">删除</button>
+          <button type="button" class="ghost remove-symbol">Remove</button>
         `;
         row.querySelector(".remove-symbol").addEventListener("click", () => {{
           row.remove();
@@ -1161,19 +1161,19 @@ def render_report(config, history, generated_at):
           .filter((item) => item.symbol);
 
         if (!symbols.length) {{
-          throw new Error("至少保留一只股票。");
+          throw new Error("Keep at least one symbol.");
         }}
 
         const seen = new Set();
         for (const item of symbols) {{
           if (!/^[A-Z0-9^][A-Z0-9.\\-^]{{0,14}}$/.test(item.symbol)) {{
-            throw new Error("股票代码格式不对，请只使用字母、数字、点或横线。");
+            throw new Error("Ticker format is invalid. Use only letters, numbers, dots, or hyphens.");
           }}
           if (seen.has(item.symbol)) {{
-            throw new Error("股票代码不能重复。");
+            throw new Error("Duplicate tickers are not allowed.");
           }}
           if (!Number.isFinite(item.threshold) || item.threshold <= 0) {{
-            throw new Error(`请给 ${{item.symbol}} 填一个大于 0 的阈值。`);
+            throw new Error(`Enter a threshold greater than 0 for ${{item.symbol}}.`);
           }}
           seen.add(item.symbol);
         }}
@@ -1205,8 +1205,8 @@ def render_report(config, history, generated_at):
         populateForm(savedConfig);
         setStatus(
           liveMode
-            ? "已恢复到当前保存的服务器配置。"
-            : "已恢复到页面里最后一次加载的配置。",
+            ? "Restored the currently saved server config."
+            : "Restored the most recently loaded config from this page.",
           liveMode ? "live" : ""
         );
       }});
@@ -1237,10 +1237,10 @@ def render_report(config, history, generated_at):
           liveMode = true;
           localStorage.removeItem("stock-monitor-draft-config");
           populateForm(savedConfig);
-          setStatus("设置已保存到 data/monitor_config.json。刷新页面后，新的股票和阈值会用于后续提醒。", "live");
+          setStatus("Settings saved to data/monitor_config.json. After refresh, the new symbols and thresholds will be used for future alerts.", "live");
           window.setTimeout(() => window.location.reload(), 700);
         }} catch (error) {{
-          setStatus("当前页面是静态模式，设置只保存在这个浏览器里做预览。要真正保存，请运行 python main.py serve。", "warn");
+          setStatus("This page is in static mode. Changes are only stored in this browser for preview. To save them for real, run python main.py serve.", "warn");
         }}
       }});
 
@@ -1257,12 +1257,12 @@ def render_report(config, history, generated_at):
         try {{
           savedConfig = await tryLoadServerConfig();
           liveMode = true;
-          setStatus("当前为本地可写模式。保存后会直接写入 data/monitor_config.json。", "live");
+          setStatus("Local writable mode is active. Saving will write directly to data/monitor_config.json.", "live");
         }} catch (error) {{
           if (draft) {{
-            setStatus("当前是静态报告页。你上次在浏览器里改过的设置已经恢复，但还没有真正保存到项目里。", "warn");
+            setStatus("This is the static report page. Your last browser edits were restored, but they have not been saved to the project yet.", "warn");
           }} else {{
-            setStatus("当前是静态报告页。你可以先在这里预览设置；要真正保存，请在项目目录运行 python main.py serve。", "warn");
+            setStatus("This is the static report page. You can preview settings here first; to save them for real, run python main.py serve in the project directory.", "warn");
           }}
         }}
 
@@ -1321,7 +1321,7 @@ def maybe_send_intraday_alerts(config, state, now_market_tz, today_str):
             print(f"[INFO] alert already sent for {symbol} {direction} on {today_str}")
             continue
 
-        subject = f"股票提醒 | {symbol} {format_pct(intraday['move_pct'])} | 超过阈值 {threshold:.2f}%"
+        subject = f"Stock Alert | {symbol} {format_pct(intraday['move_pct'])} | Above {threshold:.2f}% threshold"
         text_body = build_alert_email_text(symbol, intraday, threshold, lookback_minutes)
         html_body = build_alert_email_html(symbol, intraday, threshold, lookback_minutes)
         try:
@@ -1362,7 +1362,7 @@ def maybe_send_daily_summary(config, state, now_market_tz, today_str):
         return []
 
     threshold_map = get_threshold_map(config)
-    subject = f"每日股票收盘摘要 | {today_str}"
+    subject = f"Daily Stock Close Summary | {today_str}"
     text_body = build_summary_email_text(today_str, snapshots, threshold_map, config)
     html_body = build_summary_email_html(today_str, snapshots, threshold_map, config)
     try:
