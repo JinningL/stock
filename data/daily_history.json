@@ -1617,17 +1617,17 @@
       "symbol": "CRCL"
     },
     {
-      "change": -13.59,
-      "change_pct": -1.88,
-      "close": 709.23,
+      "change": -13.39,
+      "change_pct": -1.85,
+      "close": 709.43,
       "date": "2026-07-07",
       "previous_close": 722.82,
       "symbol": "QQQ"
     },
     {
-      "change": -17.06,
-      "change_pct": -4.06,
-      "close": 402.71,
+      "change": -16.87,
+      "change_pct": -4.02,
+      "close": 402.9,
       "date": "2026-07-07",
       "previous_close": 419.77,
       "symbol": "TSLA"
