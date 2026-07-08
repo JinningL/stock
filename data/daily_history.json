@@ -1633,9 +1633,9 @@
       "symbol": "TSLA"
     },
     {
-      "change": -1.07,
-      "change_pct": -1.64,
-      "close": 64.08,
+      "change": -1.08,
+      "change_pct": -1.66,
+      "close": 64.07,
       "date": "2026-07-08",
       "previous_close": 65.15,
       "symbol": "CRCL"
@@ -1649,9 +1649,9 @@
       "symbol": "QQQ"
     },
     {
-      "change": -8.97,
-      "change_pct": -2.23,
-      "close": 393.93,
+      "change": -8.84,
+      "change_pct": -2.19,
+      "close": 394.06,
       "date": "2026-07-08",
       "previous_close": 402.9,
       "symbol": "TSLA"
