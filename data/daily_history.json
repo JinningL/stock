@@ -1729,17 +1729,17 @@
       "symbol": "TSLA"
     },
     {
-      "change": 0.21,
-      "change_pct": 0.33,
-      "close": 63.21,
+      "change": 0.22,
+      "change_pct": 0.35,
+      "close": 63.22,
       "date": "2026-07-14",
       "previous_close": 63.0,
       "symbol": "CRCL"
     },
     {
-      "change": 7.97,
+      "change": 7.95,
       "change_pct": 1.12,
-      "close": 719.71,
+      "close": 719.69,
       "date": "2026-07-14",
       "previous_close": 711.74,
       "symbol": "QQQ"
