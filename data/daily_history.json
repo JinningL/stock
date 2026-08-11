@@ -2209,25 +2209,25 @@
       "symbol": "TSLA"
     },
     {
-      "change": 5.87,
-      "change_pct": 8.75,
-      "close": 72.92,
+      "change": 4.2,
+      "change_pct": 6.26,
+      "close": 71.25,
       "date": "2026-08-11",
       "previous_close": 67.05,
       "symbol": "CRCL"
     },
     {
-      "change": 0.45,
-      "change_pct": 0.06,
-      "close": 721.32,
+      "change": -0.75,
+      "change_pct": -0.1,
+      "close": 720.12,
       "date": "2026-08-11",
       "previous_close": 720.87,
       "symbol": "QQQ"
     },
     {
-      "change": 3.94,
-      "change_pct": 1.19,
-      "close": 334.82,
+      "change": 2.4,
+      "change_pct": 0.73,
+      "close": 333.28,
       "date": "2026-08-11",
       "previous_close": 330.88,
       "symbol": "TSLA"
