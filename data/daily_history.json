@@ -2289,17 +2289,17 @@
       "symbol": "CRCL"
     },
     {
-      "change": -2.6,
-      "change_pct": -0.35,
-      "close": 729.47,
+      "change": -2.13,
+      "change_pct": -0.29,
+      "close": 729.94,
       "date": "2026-08-14",
       "previous_close": 732.07,
       "symbol": "QQQ"
     },
     {
-      "change": 2.46,
-      "change_pct": 0.73,
-      "close": 342.42,
+      "change": 2.04,
+      "change_pct": 0.6,
+      "close": 342.0,
       "date": "2026-08-14",
       "previous_close": 339.96,
       "symbol": "TSLA"
