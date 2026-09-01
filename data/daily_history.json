@@ -2567,6 +2567,30 @@
       "date": "2026-08-31",
       "previous_close": 348.75,
       "symbol": "TSLA"
+    },
+    {
+      "change": -5.85,
+      "change_pct": -6.12,
+      "close": 89.7,
+      "date": "2026-09-01",
+      "previous_close": 95.55,
+      "symbol": "CRCL"
+    },
+    {
+      "change": -8.27,
+      "change_pct": -1.15,
+      "close": 708.49,
+      "date": "2026-09-01",
+      "previous_close": 716.76,
+      "symbol": "QQQ"
+    },
+    {
+      "change": -10.79,
+      "change_pct": -2.93,
+      "close": 357.16,
+      "date": "2026-09-01",
+      "previous_close": 367.95,
+      "symbol": "TSLA"
     }
   ]
 }
